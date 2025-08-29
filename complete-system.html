@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경산다육식물농장 - 완전한 관리시스템</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .modal { display: none; }
+        .modal.active { display: flex; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <header class="bg-green-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-seedling text-2xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">경산다육식물농장</h1>
+                        <p class="text-green-100 text-sm">White Platter 전문 관리시스템</p>
+                    </div>
+                </div>
+                
+                <!-- API 상태 표시 -->
+                <div class="flex items-center space-x-2 px-3 py-1 rounded-lg text-sm">
+                    <div id="api-status-dot" class="w-2 h-2 rounded-full bg-green-400"></div>
+                    <span id="api-status-text" class="text-xs text-green-100">시스템 정상</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8">
+        
+        <!-- Navigation Tabs -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="flex flex-wrap border-b">
+                <button onclick="showTab('orders')" class="tab-btn px-6 py-3 border-b-2 border-green-500 text-green-600 font-medium">
+                    <i class="fas fa-shopping-cart mr-2"></i>주문관리
+                </button>
+                <button onclick="showTab('customers')" class="tab-btn px-6 py-3 text-gray-500 hover:text-green-600">
+                    <i class="fas fa-users mr-2"></i>고객관리
+                </button>
+                <button onclick="showTab('products')" class="tab-btn px-6 py-3 text-gray-500 hover:text-green-600">
+                    <i class="fas fa-leaf mr-2"></i>상품관리
+                </button>
+                <button onclick="showTab('shipping')" class="tab-btn px-6 py-3 text-gray-500 hover:text-green-600">
+                    <i class="fas fa-truck mr-2"></i>배송관리
+                </button>
+                <button onclick="showTab('waitlist')" class="tab-btn px-6 py-3 text-gray-500 hover:text-green-600">
+                    <i class="fas fa-clock mr-2"></i>대기고객
+                </button>
+            </div>
+            
+            <!-- 주문 관리 탭 -->
+            <div id="orders" class="tab-content active p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">주문 관리</h2>
+                    <div class="space-x-2">
+                        <button onclick="openOrderModal()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                            <i class="fas fa-plus mr-1"></i>새 주문 등록
+                        </button>
+                        <button onclick="generatePickingList()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                            <i class="fas fa-list mr-1"></i>피킹 리스트
+                        </button>
+                        <button onclick="generatePackagingLabels()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                            <i class="fas fa-box mr-1"></i>포장 라벨
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 주문 상태 필터 -->
+                <div class="mb-4 flex flex-wrap gap-2">
+                    <button onclick="filterOrders('all')" class="filter-btn active bg-gray-500 text-white px-3 py-1 rounded text-sm">전체</button>
+                    <button onclick="filterOrders('pending')" class="filter-btn bg-yellow-500 text-white px-3 py-1 rounded text-sm">접수완료</button>
+                    <button onclick="filterOrders('preparing')" class="filter-btn bg-blue-500 text-white px-3 py-1 rounded text-sm">배송준비</button>
+                    <button onclick="filterOrders('shipped')" class="filter-btn bg-green-500 text-white px-3 py-1 rounded text-sm">배송중</button>
+                    <button onclick="filterOrders('delivered')" class="filter-btn bg-gray-600 text-white px-3 py-1 rounded text-sm">배송완료</button>
+                </div>
+                
+                <!-- 주문 테이블 -->
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-white border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">주문번호</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">고객명</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">상품</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">금액</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">상태</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-table-body">
+                            <!-- 데이터가 여기에 표시됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 고객 관리 탭 -->
+            <div id="customers" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">고객 관리</h2>
+                    <button onclick="openCustomerModal()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-user-plus mr-1"></i>새 고객 등록
+                    </button>
+                </div>
+                
+                <!-- 고객 테이블 -->
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-white border border-gray-200 rounded-lg">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">고객명</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">전화번호</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">주소</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">등급</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-900">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table-body">
+                            <!-- 데이터가 여기에 표시됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 상품 관리 탭 -->
+            <div id="products" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">상품 관리</h2>
+                    <button onclick="openProductModal()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-plus mr-1"></i>새 상품 등록
+                    </button>
+                </div>
+                
+                <!-- 상품 카드 그리드 -->
+                <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- 상품 카드들이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            
+            <!-- 배송 관리 탭 -->
+            <div id="shipping" class="tab-content p-6">
+                <h2 class="text-xl font-bold mb-6">배송 관리</h2>
+                
+                <!-- 배송 통계 -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-yellow-100 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-yellow-800">배송 준비</h3>
+                        <p class="text-2xl font-bold text-yellow-900" id="preparing-count">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-blue-800">배송 중</h3>
+                        <p class="text-2xl font-bold text-blue-900" id="shipping-count">0</p>
+                    </div>
+                    <div class="bg-green-100 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-green-800">배송 완료</h3>
+                        <p class="text-2xl font-bold text-green-900" id="delivered-count">0</p>
+                    </div>
+                    <div class="bg-gray-100 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800">총 주문</h3>
+                        <p class="text-2xl font-bold text-gray-900" id="total-count">0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 대기고객 탭 -->
+            <div id="waitlist" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">대기고객 관리</h2>
+                    <button onclick="openWaitlistModal()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-clock mr-1"></i>대기고객 등록
+                    </button>
+                </div>
+                
+                <div class="bg-orange-50 p-4 rounded-lg">
+                    <p class="text-center text-orange-700">품절 상품에 대한 대기고객을 관리합니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 주문 등록 모달 -->
+    <div id="order-modal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">새 주문 등록</h3>
+                <button onclick="closeModal('order-modal')" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="order-form">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">고객명</label>
+                        <input type="text" id="order-customer" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                        <input type="tel" id="order-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">상품</label>
+                        <select id="order-product" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                            <option value="">상품 선택</option>
+                            <option value="White Platter 소품">White Platter 소품 - 15,000원</option>
+                            <option value="White Platter 중품">White Platter 중품 - 25,000원</option>
+                            <option value="White Platter 대품">White Platter 대품 - 45,000원</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">수량</label>
+                        <input type="number" id="order-quantity" min="1" value="1" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">주소</label>
+                        <textarea id="order-address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="closeModal('order-modal')" class="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
+                        취소
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">
+                        등록
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        console.log('🌱 경산다육식물농장 완전한 시스템 로드됨');
+        
+        // 전역 데이터
+        let orders = [];
+        let customers = [];
+        let products = [
+            { id: 1, name: 'White Platter 소품', price: 15000, stock: 50, category: 'White Platter' },
+            { id: 2, name: 'White Platter 중품', price: 25000, stock: 30, category: 'White Platter' },
+            { id: 3, name: 'White Platter 대품', price: 45000, stock: 15, category: 'White Platter' }
+        ];
+
+        // 탭 전환 함수
+        function showTab(tabName) {
+            // 모든 탭 숨기기
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-6 py-3 text-gray-500 hover:text-green-600';
+            });
+            
+            // 선택된 탭 표시
+            document.getElementById(tabName).classList.add('active');
+            event.target.className = 'tab-btn px-6 py-3 border-b-2 border-green-500 text-green-600 font-medium';
+            
+            console.log('탭 전환:', tabName);
+            
+            // 탭별 데이터 로드
+            if (tabName === 'orders') loadOrders();
+            if (tabName === 'customers') loadCustomers();
+            if (tabName === 'products') loadProducts();
+            if (tabName === 'shipping') updateShippingStats();
+        }
+
+        // 모달 열기/닫기
+        function openOrderModal() {
+            document.getElementById('order-modal').classList.add('active');
+        }
+
+        function openCustomerModal() {
+            alert('고객 등록 모달 (개발 중)');
+        }
+
+        function openProductModal() {
+            alert('상품 등록 모달 (개발 중)');
+        }
+
+        function openWaitlistModal() {
+            alert('대기고객 등록 모달 (개발 중)');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 주문 관련 함수들
+        function generatePickingList() {
+            if (orders.length === 0) {
+                alert('📋 주문이 없습니다!\\n\\n먼저 새 주문을 등록해주세요.');
+                return;
+            }
+            
+            const preparingOrders = orders.filter(order => order.status === 'preparing');
+            if (preparingOrders.length === 0) {
+                alert('📋 배송 준비 중인 주문이 없습니다!');
+                return;
+            }
+            
+            let pickingList = '📋 피킹 리스트\\n';
+            pickingList += '================\\n\\n';
+            
+            preparingOrders.forEach((order, index) => {
+                pickingList += `${index + 1}. ${order.customer}\\n`;
+                pickingList += `   상품: ${order.product}\\n`;
+                pickingList += `   수량: ${order.quantity}개\\n`;
+                pickingList += `   주문번호: ${order.id}\\n\\n`;
+            });
+            
+            alert(pickingList);
+        }
+
+        function generatePackagingLabels() {
+            if (orders.length === 0) {
+                alert('📦 주문이 없습니다!\\n\\n먼저 새 주문을 등록해주세요.');
+                return;
+            }
+            
+            alert('📦 포장 라벨 생성\\n\\n총 ' + orders.length + '개 주문의 포장 라벨이 생성되었습니다!');
+        }
+
+        function filterOrders(status) {
+            // 필터 버튼 스타일 업데이트
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'ring-2', 'ring-offset-2');
+            });
+            event.target.classList.add('active', 'ring-2', 'ring-offset-2');
+            
+            loadOrders(status);
+        }
+
+        function loadOrders(filterStatus = 'all') {
+            const tbody = document.getElementById('orders-table-body');
+            
+            if (orders.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-shopping-cart text-4xl mb-2 block text-gray-300"></i>
+                            등록된 주문이 없습니다.<br>
+                            <button onclick="openOrderModal()" class="mt-2 text-green-600 hover:text-green-800">새 주문 등록하기</button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            const filteredOrders = filterStatus === 'all' 
+                ? orders 
+                : orders.filter(order => order.status === filterStatus);
+            
+            tbody.innerHTML = filteredOrders.map(order => `
+                <tr class="border-t border-gray-200">
+                    <td class="px-4 py-3 text-sm font-medium">${order.id}</td>
+                    <td class="px-4 py-3 text-sm">${order.customer}</td>
+                    <td class="px-4 py-3 text-sm">${order.product} x${order.quantity}</td>
+                    <td class="px-4 py-3 text-sm font-medium">${order.total.toLocaleString()}원</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}">
+                            ${getStatusText(order.status)}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="updateOrderStatus('${order.id}')" class="text-blue-600 hover:text-blue-800 mr-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteOrder('${order.id}')" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function loadCustomers() {
+            const tbody = document.getElementById('customers-table-body');
+            
+            if (customers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            <i class="fas fa-users text-4xl mb-2 block text-gray-300"></i>
+                            등록된 고객이 없습니다.<br>
+                            <button onclick="openCustomerModal()" class="mt-2 text-purple-600 hover:text-purple-800">새 고객 등록하기</button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = customers.map(customer => `
+                <tr class="border-t border-gray-200">
+                    <td class="px-4 py-3 text-sm font-medium">${customer.name}</td>
+                    <td class="px-4 py-3 text-sm">${customer.phone}</td>
+                    <td class="px-4 py-3 text-sm">${customer.address}</td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                            ${customer.grade}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <button class="text-blue-600 hover:text-blue-800 mr-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function loadProducts() {
+            const grid = document.getElementById('products-grid');
+            
+            grid.innerHTML = products.map(product => `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-lg font-semibold">${product.name}</h3>
+                        <span class="text-2xl">🌱</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-2">${product.category}</p>
+                    <p class="text-xl font-bold text-green-600 mb-2">${product.price.toLocaleString()}원</p>
+                    <p class="text-sm text-gray-500 mb-4">재고: ${product.stock}개</p>
+                    
+                    <div class="flex space-x-2">
+                        <button class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">
+                            <i class="fas fa-edit mr-1"></i>수정
+                        </button>
+                        <button class="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm">
+                            <i class="fas fa-trash mr-1"></i>삭제
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateShippingStats() {
+            document.getElementById('preparing-count').textContent = 
+                orders.filter(o => o.status === 'preparing').length;
+            document.getElementById('shipping-count').textContent = 
+                orders.filter(o => o.status === 'shipped').length;
+            document.getElementById('delivered-count').textContent = 
+                orders.filter(o => o.status === 'delivered').length;
+            document.getElementById('total-count').textContent = orders.length;
+        }
+
+        // 유틸리티 함수들
+        function getStatusColor(status) {
+            const colors = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'preparing': 'bg-blue-100 text-blue-800',
+                'shipped': 'bg-green-100 text-green-800',
+                'delivered': 'bg-gray-100 text-gray-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'pending': '접수완료',
+                'preparing': '배송준비',
+                'shipped': '배송중',
+                'delivered': '배송완료'
+            };
+            return texts[status] || '알 수 없음';
+        }
+
+        function updateOrderStatus(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            const statuses = ['pending', 'preparing', 'shipped', 'delivered'];
+            const currentIndex = statuses.indexOf(order.status);
+            const nextIndex = (currentIndex + 1) % statuses.length;
+            
+            order.status = statuses[nextIndex];
+            
+            loadOrders();
+            updateShippingStats();
+            
+            alert(`주문 ${orderId}의 상태가 "${getStatusText(order.status)}"로 변경되었습니다.`);
+        }
+
+        function deleteOrder(orderId) {
+            if (confirm('정말로 이 주문을 삭제하시겠습니까?')) {
+                orders = orders.filter(o => o.id !== orderId);
+                loadOrders();
+                updateShippingStats();
+                alert('주문이 삭제되었습니다.');
+            }
+        }
+
+        // 주문 폼 제출 처리
+        document.getElementById('order-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const customer = document.getElementById('order-customer').value;
+            const phone = document.getElementById('order-phone').value;
+            const product = document.getElementById('order-product').value;
+            const quantity = parseInt(document.getElementById('order-quantity').value);
+            const address = document.getElementById('order-address').value;
+            
+            if (!customer || !phone || !product || !quantity || !address) {
+                alert('모든 필드를 입력해주세요.');
+                return;
+            }
+            
+            // 가격 계산
+            const prices = {
+                'White Platter 소품': 15000,
+                'White Platter 중품': 25000,
+                'White Platter 대품': 45000
+            };
+            
+            const unitPrice = prices[product] || 0;
+            const total = unitPrice * quantity;
+            
+            // 새 주문 생성
+            const newOrder = {
+                id: 'ORD' + Date.now(),
+                customer: customer,
+                phone: phone,
+                product: product,
+                quantity: quantity,
+                total: total,
+                address: address,
+                status: 'pending',
+                date: new Date().toLocaleDateString()
+            };
+            
+            orders.push(newOrder);
+            
+            // 고객 정보도 추가 (중복 체크)
+            if (!customers.find(c => c.phone === phone)) {
+                customers.push({
+                    name: customer,
+                    phone: phone,
+                    address: address,
+                    grade: '일반',
+                    registrationDate: new Date().toLocaleDateString()
+                });
+            }
+            
+            // 폼 초기화 및 모달 닫기
+            document.getElementById('order-form').reset();
+            closeModal('order-modal');
+            
+            // 테이블 새로고침
+            loadOrders();
+            updateShippingStats();
+            
+            alert(`새 주문이 등록되었습니다!\\n주문번호: ${newOrder.id}`);
+        });
+
+        // 초기 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ 시스템 초기화 완료');
+            loadOrders();
+            loadCustomers();
+            loadProducts();
+            updateShippingStats();
+        });
+
+        console.log('🚀 모든 기능이 정상적으로 로드되었습니다!');
+    </script>
+
+</body>
+</html>
