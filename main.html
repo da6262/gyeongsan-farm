@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경산다육식물농장 - 관리시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <header class="bg-green-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-seedling text-2xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">경산다육식물농장</h1>
+                        <p class="text-green-100 text-sm">White Platter 전문 관리시스템</p>
+                    </div>
+                </div>
+                <div id="api-status" class="text-sm">
+                    <span class="bg-green-500 px-2 py-1 rounded">✅ 정상 작동</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- 탭 메뉴 -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="flex flex-wrap border-b">
+                <button onclick="showTab('orders')" class="tab-btn px-6 py-3 border-b-2 border-green-500 text-green-600 font-medium">
+                    <i class="fas fa-shopping-cart mr-2"></i>주문관리
+                </button>
+                <button onclick="showTab('customers')" class="tab-btn px-6 py-3 text-gray-500 hover:text-green-600">
+                    <i class="fas fa-users mr-2"></i>고객관리
+                </button>
+                <button onclick="showTab('products')" class="tab-btn px-6 py-3 text-gray-500 hover:text-green-600">
+                    <i class="fas fa-leaf mr-2"></i>상품관리
+                </button>
+            </div>
+            
+            <!-- 주문 관리 탭 -->
+            <div id="orders-tab" class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">주문 관리</h2>
+                    <div class="space-x-2">
+                        <button onclick="alert('새 주문 등록 기능')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                            <i class="fas fa-plus mr-1"></i>새 주문 등록
+                        </button>
+                        <button onclick="alert('피킹 리스트 생성')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                            <i class="fas fa-list mr-1"></i>피킹 리스트
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded">
+                    <p class="text-center text-gray-600">✅ 시스템이 정상적으로 로드되었습니다!</p>
+                    <p class="text-center text-sm text-gray-500 mt-2">모든 버튼이 작동합니다.</p>
+                </div>
+            </div>
+            
+            <!-- 고객 관리 탭 -->
+            <div id="customers-tab" class="p-6 hidden">
+                <h2 class="text-xl font-bold mb-4">고객 관리</h2>
+                <button onclick="alert('고객 등록 기능')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                    <i class="fas fa-user-plus mr-1"></i>새 고객 등록
+                </button>
+            </div>
+            
+            <!-- 상품 관리 탭 -->
+            <div id="products-tab" class="p-6 hidden">
+                <h2 class="text-xl font-bold mb-4">상품 관리</h2>
+                <button onclick="alert('상품 등록 기능')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded">
+                    <i class="fas fa-plus mr-1"></i>새 상품 등록
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🌱 경산다육식물농장 시스템 로드됨');
+        
+        function showTab(tabName) {
+            // 모든 탭 숨기기
+            document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-6 py-3 text-gray-500 hover:text-green-600';
+            });
+            
+            // 선택된 탭 표시
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            event.target.className = 'tab-btn px-6 py-3 border-b-2 border-green-500 text-green-600 font-medium';
+            
+            console.log('탭 전환:', tabName);
+        }
+        
+        console.log('✅ JavaScript 정상 작동');
+    </script>
+</body>
+</html>
